@@ -1,36 +1,61 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
-	"sync"
-	"text/template"
+
+	"github.com/gorilla/websocket"
 )
 
-type templateHandler struct {
-	once     sync.Once
-	filename string
-	templ    *template.Template
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+
+	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t.once.Do(func() {
-		t.templ = template.Must(template.ParseFiles(filepath.Join("templates", t.filename)))
+func reader(conn *websocket.Conn) {
 
-	})
+	for {
+		messageType, p, err := conn.ReadMessage()
 
-	t.templ.Execute(w, nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		fmt.Println(string(p))
+
+		if err := conn.WriteMessage(messageType, p); err != nil {
+			log.Println(err)
+			return
+		}
+
+	}
+}
+
+func serveWs(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Host)
+
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+
+	}
+
+	reader(ws)
+
 }
 
 func main() {
-	http.Handle("/", &templateHandler{
-		filename: "chat.html",
+
+	fmt.Println("Chat App")
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Simple Server")
 	})
-
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-
-		log.Fatal("ListenAndServe:", err)
-	}
-
+	// mape our `/ws` endpoint to the `serveWs` function
+	http.HandleFunc("/ws", serveWs)
+	http.ListenAndServe(":8080", nil)
 }
