@@ -10,7 +10,7 @@ let connect =cb=>{
 
 
     socket.onmessage=msg=>{
-        console.log(msg);
+        console.log(msg,"<------");
         cb(msg)
 
     };

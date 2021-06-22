@@ -1,6 +1,6 @@
 
 
-
+import Message from './Message'
 
 function Allmsgs(props){
     console.log("HIIIIi",props.mesgs)
@@ -9,7 +9,8 @@ function Allmsgs(props){
         <h2>All messages</h2>
         {
             props.mesgs.map((msg,index)=>(
-            <p key={index}>{msg.data}</p>
+            // <p key={index}>{msg.data}</p>
+            <Message key={index} message={msg.data}/>
             ))
         }
 
